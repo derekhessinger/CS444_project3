@@ -120,16 +120,16 @@ def make_corpus(N_reviews, min_sent_size=2, max_sent_len=30, verbose=False):
             # Tokenize the sentence into individual words
             words = tokenize_words(sentence)
             
-            # Only add sentences that have enough words
+            # Check for sentences that have enough words
             if len(words) >= min_sent_size:
-                # Trim sentences that are too long
+                # Trim sentences that too long
                 if len(words) >= max_sent_len:
                     words = words[:max_sent_len]
                 
                 # Add sentence to corpus
                 corpus.append(words)
                 
-                # Add the rating and review ID for this sentence
+                # Add the rating and review ID
                 sentence_ratings.append(rating)
                 review_ids.append(review_id)
     
@@ -157,7 +157,13 @@ def find_unique_words(corpus):
     Python list of str.
         List of unique words in the corpus.
     '''
-    pass
+    unique_words = set()
+    
+    for sentence in corpus:
+        for word in sentence:
+            unique_words.add(word)
+    
+    return list(unique_words)
 
 
 def make_word2ind_mapping(vocab):
@@ -173,7 +179,10 @@ def make_word2ind_mapping(vocab):
     -----------
     Python dictionary. key,value pairs: str,int
     '''
-    pass
+    word2ind = {}
+    for i, word in enumerate(vocab):
+        word2ind[word] = i
+    return word2ind
 
 
 def make_ind2word_mapping(vocab):
@@ -189,7 +198,10 @@ def make_ind2word_mapping(vocab):
     -----------
     Python dictionary with key,value pairs: int,str
     '''
-    pass
+    ind2word = {}
+    for i, word in enumerate(vocab):
+        ind2word[i] = word
+    return ind2word
 
 
 def make_target_context_word_lists(corpus, word2ind, context_win_sz=2):
@@ -229,7 +241,32 @@ def make_target_context_word_lists(corpus, word2ind, context_win_sz=2):
     edge effects.
     - The length of target_words_int and context_words_int MUST be equal!
     '''
-    pass
+    target_words_int = []
+    context_words_int = []
+    
+    for sentence in corpus:
+        for i in range(len(sentence)):
+            # Get the target word
+            target_word_int = word2ind[sentence[i]]
+            
+            # Get context words before the target
+            j = i-1
+            while j >= 0 and i-j <= context_win_sz:
+                context_word_int = word2ind[sentence[j]]
+                target_words_int.append(target_word_int)
+                context_words_int.append(context_word_int)
+                j -= 1
+            
+            # Get context words after the target
+            j = i+1
+            while j < len(sentence) and j-i <= context_win_sz:
+                context_word_int = word2ind[sentence[j]]
+                target_words_int.append(target_word_int)
+                context_words_int.append(context_word_int)
+                j += 1
+    
+    # Convert to TensorFlow constants with proper dtypes
+    return tf.constant(target_words_int, dtype=tf.int32), tf.constant(context_words_int, dtype=tf.int32)
 
 
 def get_dataset_word2vec(N_reviews=40000, verbose=False):
@@ -252,7 +289,24 @@ def get_dataset_word2vec(N_reviews=40000, verbose=False):
     Python list of str.
         The vocabulary / list of unique words in the corpus.
     '''
-    pass
+    # Create the corpus
+    corpus, _, _ = make_corpus(N_reviews, verbose=verbose)
+    
+    # Find unique words (vocabulary)
+    vocab = find_unique_words(corpus)
+    
+    # Create word to index mapping
+    word2ind = make_word2ind_mapping(vocab)
+    
+    # Create target and context word lists
+    target_words, context_words = make_target_context_word_lists(corpus, word2ind)
+    
+    if verbose:
+        print(f"Created dataset with {len(target_words)} target-context word pairs")
+        print(f"Vocabulary size: {len(vocab)} unique words")
+    
+    return target_words, context_words, vocab
+
 
 
 def get_most_similar_words(k, word_str, all_embeddings, word_str2int, eps=1e-10):
