@@ -40,7 +40,9 @@ class CBOW(network.DeepNetwork):
         1. Call the superclass constructor to pass along parameters that `DeepNetwork` has in common.
         2. Build out the CBOW network.
         '''
-        pass
+        super().__init__(input_feats_shape, reg)
+        self.c = C
+        self.embedding_dim = embedding_dim
 
     def __call__(self, x):
         '''Forward pass through the CBOW with the data samples `x`.

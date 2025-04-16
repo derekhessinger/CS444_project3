@@ -157,13 +157,12 @@ def find_unique_words(corpus):
     Python list of str.
         List of unique words in the corpus.
     '''
-    unique_words = set()
-    
+    unique_words = []
     for sentence in corpus:
         for word in sentence:
-            unique_words.add(word)
-    
-    return list(unique_words)
+            if word not in unique_words:
+                unique_words.append(word)
+    return unique_words
 
 
 def make_word2ind_mapping(vocab):

@@ -29,7 +29,7 @@ class DenseEmbedding(layers.Dense):
         You should only need to call and pass in relevant information into the superclass constructor to implement this
         method.
         '''
-        pass
+        super().__init__(name, units, prev_layer_or_block=prev_layer_or_block)
 
     def compute_net_input(self, x):
         '''Computes the net input for the current DenseEmbedding layer.
@@ -54,4 +54,9 @@ class DenseEmbedding(layers.Dense):
             self.init_params(input_shape=x.shape)
             # Special case to only handle lazy wt/bias initialization during net compile
             return x @ self.wts + self.b
+        
+        # For the normal case, we need to gather rows from the weight matrix
+        # based on the indices in x, then add the bias
+        selected_weights = tf.gather(self.wts, x)
+        return selected_weights + self.b
 
