@@ -268,7 +268,7 @@ def make_target_context_word_lists(corpus, word2ind, context_win_sz=2):
     return tf.constant(target_words_int, dtype=tf.int32), tf.constant(context_words_int, dtype=tf.int32)
 
 
-def get_dataset_word2vec(N_reviews=40000, verbose=False):
+def get_dataset_word2vec(N_reviews=40000, verbose=False, corpus_return=False):
     '''Gets and preprocesses the Amazon Fashion Reviews dataset appropriately for training the CBOW neural network.
     This is a wrapper function to automate the functions you have already written.
 
@@ -304,6 +304,9 @@ def get_dataset_word2vec(N_reviews=40000, verbose=False):
         print(f"Created dataset with {len(target_words)} target-context word pairs")
         print(f"Vocabulary size: {len(vocab)} unique words")
     
+    if(corpus_return):
+         return target_words, context_words, vocab, corpus
+    
     return target_words, context_words, vocab
 
 
@@ -336,6 +339,15 @@ def get_most_similar_words(k, word_str, all_embeddings, word_str2int, eps=1e-10)
     https://www.tensorflow.org/api_docs/python/tf/math/top_k
     -
     '''
+    word_int = word_str2int[word_str]
+    word_emb = all_embeddings[word_int]
+
+    num_cosine =  all_embeddings @ word_emb
+    denom_cosine = tf.norm(all_embeddings, axis=1) * tf.norm(word_emb)
+    cosine_similarities = num_cosine / denom_cosine
+    vals, indices = tf.math.top_k(cosine_similarities, k+1)
+
+    return indices.numpy(), vals.numpy()
     pass
 
 
